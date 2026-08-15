@@ -1,25 +1,27 @@
-# Базовые зависимости Части 1. Версии зафиксируешь после первого рабочего окружения:
-#   pip freeze > requirements.lock.txt
-
+# Базовые зависимости Части 1.
 numpy
 pandas
+pyarrow
 scikit-learn
 scipy
+pyyaml
 
 # Нейросеть (two-tower)
 torch
 
 # Бейзлайн — градиентный бустинг
 xgboost
-# lightgbm            # альтернатива, при необходимости
 
 # Белковые эмбеддинги (ESM-2)
 fair-esm
 
-# Ноутбуки и визуализация
-jupyter
+# Загрузка последовательностей белков
+requests
+
+# Визуализация
 matplotlib
 seaborn
+tqdm
 
-# Трекинг экспериментов (опционально)
-# wandb
+# Тесты
+pytest

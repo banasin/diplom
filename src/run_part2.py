@@ -47,6 +47,45 @@ def evaluate_unified(uf, train_mask, test_mask, fusion, cfg: Part2Config):
                          "unified", fusion, "cluster")
 
 
+def evaluate_per_type_baselines(uf, train_mask, test_mask, cfg: Part2Config):
+    """Отдельные по-типные модели (планки для H3): для каждого типа мишени —
+    two-tower (Часть 1) и XGBoost только на данных этого типа."""
+    from src.models.twotower import train_twotower, predict_twotower
+    from src.models.baseline import train_baseline, predict_baseline
+
+    tt_cfg = dict(cfg.nn)                         # адаптер конфига к twotower Части 1
+    tt_cfg.setdefault("protein_hidden", tt_cfg["aptamer_hidden"])
+    tt_cfg.setdefault("embed_dim", cfg.shared_dim)
+
+    rows = []
+    for tcode, tname, pooled_table, ptr in [
+        (0, "protein", uf.prot_pooled, uf.prot_ptr),
+        (1, "molecule", uf.mol_pooled, uf.mol_ptr),
+    ]:
+        tr = train_mask & (uf.target_type == tcode)
+        te = test_mask & (uf.target_type == tcode)
+        if tr.sum() < 5 or te.sum() < 2:
+            continue
+        Xa_tr, Xa_te = uf.apt_feats[tr], uf.apt_feats[te]
+        Xp_tr, Xp_te = pooled_table[ptr[tr]], pooled_table[ptr[te]]
+        y_tr, y_te = uf.y[tr], uf.y[te]
+
+        net, stats = train_twotower(Xa_tr, Xp_tr, y_tr, tt_cfg, cfg.seed)
+        p_net = predict_twotower(net, Xa_te, Xp_te, stats)
+        rows.append({"model": "twotower_pertype", "fusion": "none",
+                     "split": "cluster", "target_type": tname,
+                     **regression_metrics(y_te, p_net), "n_test": int(te.sum())})
+
+        Xc_tr = np.hstack([Xa_tr, Xp_tr])
+        Xc_te = np.hstack([Xa_te, Xp_te])
+        xgb = train_baseline(Xc_tr, y_tr, cfg.xgb, cfg.seed)
+        p_xgb = predict_baseline(xgb, Xc_te)
+        rows.append({"model": "xgboost_pertype", "fusion": "none",
+                     "split": "cluster", "target_type": tname,
+                     **regression_metrics(y_te, p_xgb), "n_test": int(te.sum())})
+    return rows
+
+
 def _subset(uf, mask):
     """Подвыборка UnifiedFeatures по булевой маске строк (таблицы эмбеддингов
     переиспользуются целиком; указатели остаются валидными)."""
@@ -93,6 +132,7 @@ def run_part2(cfg: Part2Config) -> pd.DataFrame:
     all_rows = []
     for fusion in cfg.fusions:
         all_rows += evaluate_unified(uf, tr, te, fusion, cfg)
+    all_rows += evaluate_per_type_baselines(uf, tr, te, cfg)
 
     metrics = pd.DataFrame(all_rows)
     METRICS_DIR.mkdir(parents=True, exist_ok=True)

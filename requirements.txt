@@ -25,3 +25,7 @@ tqdm
 
 # Тесты
 pytest
+
+# Часть 2: молекулярный энкодер ChemBERTa
+transformers
+huggingface_hub

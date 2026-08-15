@@ -43,6 +43,18 @@ def test_make_splits_no_leakage():
     assert_no_cluster_leakage(pairs)          # не должно бросить
 
 
+def test_make_splits_large_cluster_goes_to_train():
+    # большой кластер (8 пар) должен уйти в train; test набирается из мелких
+    pairs = pd.DataFrame({
+        "cluster_id": [0] * 8 + [1, 2],
+        "log_Kd": [-7.0] * 10,
+    })
+    out = make_splits(pairs, test_size=0.2, seed=42)
+    assert set(out[out.cluster_id == 0]["split_cluster"]) == {"train"}
+    assert (out["split_cluster"] == "test").sum() == 2   # два мелких кластера
+    assert_no_cluster_leakage(out)
+
+
 def test_leakage_detector_catches_leak():
     pairs = pd.DataFrame({
         "cluster_id": [0, 0], "split_cluster": ["train", "test"],

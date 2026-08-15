@@ -31,19 +31,24 @@ def assign_clusters(pairs: pd.DataFrame, threshold: float) -> pd.DataFrame:
 
 def _assign_by_groups(group_ids: np.ndarray, test_size: float,
                       seed: int) -> np.ndarray:
-    """Разложить группы по train/test так, чтобы суммарная доля строк в test
-    была близка к test_size; группа целиком на одной стороне."""
+    """Разложить группы по train/test так, чтобы доля строк в test была близка
+    к test_size, а КРУПНЫЕ группы попадали в train (test набирается из мелких
+    групп). Группа целиком на одной стороне — без утечки гомологии."""
     rng = np.random.default_rng(seed)
     groups, counts = np.unique(group_ids, return_counts=True)
+    # перемешиваем для детерминированного разрешения равных размеров,
+    # затем сортируем по убыванию размера (стабильно)
     perm = rng.permutation(len(groups))
     groups, counts = groups[perm], counts[perm]
+    order = np.argsort(-counts, kind="stable")
+    groups, counts = groups[order], counts[order]
     target = test_size * counts.sum()
-    in_test, acc = set(), 0
+    in_test, test_acc = [], 0
     for g, c in zip(groups, counts):
-        if acc < target:
-            in_test.add(g)
-            acc += c
-    return np.where(np.isin(group_ids, list(in_test)), "test", "train")
+        if test_acc + c <= target:      # добавляем только пока не переполним долю
+            in_test.append(g)
+            test_acc += c
+    return np.where(np.isin(group_ids, in_test), "test", "train")
 
 
 def make_splits(pairs: pd.DataFrame, test_size: float, seed: int) -> pd.DataFrame:

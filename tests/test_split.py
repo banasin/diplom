@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import pytest
 from src.data.split import (
     build_pairs, assign_clusters, make_splits, assert_no_cluster_leakage,
+    check_split_balance,
 )
 
 
@@ -65,3 +67,14 @@ def test_leakage_detector_catches_leak():
     except AssertionError:
         raised = True
     assert raised
+
+
+def test_check_split_balance_ok():
+    labels = np.array(["train"] * 80 + ["test"] * 20)
+    check_split_balance(labels, 0.2)   # доля 0.2 в норме — не бросает
+
+
+def test_check_split_balance_flags_degenerate():
+    labels = np.array(["test"] * 99 + ["train"])   # почти всё в test — вырождено
+    with pytest.raises(ValueError):
+        check_split_balance(labels, 0.2)

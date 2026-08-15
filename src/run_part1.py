@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from src.config import Config, load_config
 from src.data.split import (build_pairs, assign_clusters, make_splits,
-                            assert_no_cluster_leakage)
+                            assert_no_cluster_leakage, check_split_balance)
 from src.features.assemble import build_feature_matrix
 from src.features.protein_seqs import load_sequences
 from src.features.protein import embed_sequences
@@ -79,6 +79,8 @@ def run(cfg: Config, data_path: str = "data/dataset_protein.parquet") -> pd.Data
     # признаки через общий сборщик (Task 7); пары без эмбеддинга мишени отброшены,
     # kept сохраняет колонки split_cluster/split_random для оценки ниже
     X_apt, X_prot, y, kept = build_feature_matrix(pairs, emb, cfg.kmer_k)
+
+    check_split_balance(kept["split_cluster"], cfg.test_size, "cluster")
 
     all_rows = []
     for split_col, name in [("split_cluster", "cluster"), ("split_random", "random")]:

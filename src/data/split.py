@@ -61,6 +61,19 @@ def make_splits(pairs: pd.DataFrame, test_size: float, seed: int) -> pd.DataFram
     return pairs
 
 
+def check_split_balance(split_labels, test_size: float, name: str = "cluster",
+                        tol: float = 2.0) -> None:
+    """Проверить, что доля test близка к test_size; иначе разбиение вырождено
+    (обычно из-за слишком крупных кластеров — стоит повысить identity_threshold)."""
+    frac = float(np.mean(np.asarray(split_labels) == "test"))
+    lo, hi = test_size / tol, min(1.0, test_size * tol)
+    if not (lo <= frac <= hi):
+        raise ValueError(
+            f"Разбиение '{name}' вырождено: доля test={frac:.3f} вне "
+            f"[{lo:.3f}, {hi:.3f}]. Вероятно, кластеры слишком крупные — "
+            f"повысьте identity_threshold.")
+
+
 def assert_no_cluster_leakage(pairs: pd.DataFrame) -> None:
     sides = pairs.groupby("cluster_id")["split_cluster"].nunique()
     leaked = sides[sides > 1].index.tolist()

@@ -1,9 +1,8 @@
 import numpy as np
-import pandas as pd
 from src.run_part1 import evaluate_split
 
 
-def test_evaluate_split_returns_metrics():
+def test_evaluate_split_returns_metrics(tmp_path, monkeypatch):
     rng = np.random.default_rng(0)
     n = 60
     X_apt = rng.normal(size=(n, 6)).astype("float32")
@@ -11,8 +10,10 @@ def test_evaluate_split_returns_metrics():
     y = (X_apt[:, 0] + X_prot[:, 0]).astype("float32")
     is_test = np.array([i % 3 == 0 for i in range(n)])
     from src.config import load_config
+    import src.run_part1 as rp
     cfg = load_config("configs/part1.yaml")
     cfg.nn["max_epochs"] = 30
+    monkeypatch.setattr(rp, "FIG_DIR", tmp_path)
     rows = evaluate_split(X_apt, X_prot, y, is_test, "smoke", cfg)
     models = {r["model"] for r in rows}
     assert models == {"xgboost", "twotower"}

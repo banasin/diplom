@@ -1,6 +1,7 @@
 """ESM-2 эмбеддинги белков: mean-pooling представлений последнего слоя.
 
 Эмбеддинг каждого белка считается один раз и кэшируется (.npz, вне git)."""
+import os
 from pathlib import Path
 
 import numpy as np
@@ -29,8 +30,8 @@ def embed_sequences(seqs: dict[str, str], model_name: str, cache_path: str,
     cache_file = Path(cache_path)
     cached: dict[str, np.ndarray] = {}
     if cache_file.exists():
-        npz = np.load(cache_file, allow_pickle=False)
-        cached = {k: npz[k] for k in npz.files}
+        with np.load(cache_file, allow_pickle=False) as npz:
+            cached = {k: np.array(npz[k]) for k in npz.files}
 
     todo = {k: v[:MAX_RESIDUES] for k, v in seqs.items() if k not in cached}
     if todo:
@@ -49,6 +50,9 @@ def embed_sequences(seqs: dict[str, str], model_name: str, cache_path: str,
                 emb = reps[j, 1:len(v) + 1].mean(0).cpu().numpy().astype(np.float32)
                 cached[k] = emb
         cache_file.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(cache_file, **cached)
+        tmp_file = cache_file.with_name(cache_file.name + ".tmp")
+        with open(tmp_file, "wb") as f:
+            np.savez(f, **cached)
+        os.replace(tmp_file, cache_file)
 
     return {k: cached[k] for k in seqs if k in cached}

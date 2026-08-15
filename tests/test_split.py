@@ -1,0 +1,55 @@
+import numpy as np
+import pandas as pd
+from src.data.split import (
+    build_pairs, assign_clusters, make_splits, assert_no_cluster_leakage,
+)
+
+
+def _raw():
+    # две записи одной пары (медиана), одна оговорённая (дропается), одна обычная
+    return pd.DataFrame({
+        "aptamer_seq": ["ACGTACGTAA", "ACGTACGTAA", "TTTTGGGGCC", "ACGTACGTAA"],
+        "aptamer_type": ["DNA", "DNA", "DNA", "DNA"],
+        "target_key":   ["P1", "P1", "P1", "P2"],
+        "log_Kd":       [-8.0, -6.0, -7.0, -9.0],
+        "qualified_any": [False, False, True, False],
+    })
+
+
+def test_build_pairs_drops_qualified_and_medians():
+    pairs = build_pairs(_raw())
+    # (ACGTACGTAA,P1) медиана(-8,-6)=-7 ; (ACGTACGTAA,P2)=-9 ; qualified-строка ушла
+    assert len(pairs) == 2
+    row = pairs[(pairs.target_key == "P1")].iloc[0]
+    assert row.log_Kd == -7.0
+
+
+def test_assign_clusters_merges_similar_sequences():
+    pairs = pd.DataFrame({
+        "aptamer_seq": ["ACGTACGTAA", "ACGTACGTAT"],
+        "aptamer_type": ["DNA", "DNA"], "target_key": ["P1", "P2"],
+        "log_Kd": [-7.0, -8.0],
+    })
+    out = assign_clusters(pairs, threshold=0.8)
+    assert out.cluster_id.nunique() == 1
+
+
+def test_make_splits_no_leakage():
+    pairs = build_pairs(_raw())
+    pairs = assign_clusters(pairs, threshold=0.8)
+    pairs = make_splits(pairs, test_size=0.5, seed=42)
+    assert set(pairs.split_cluster) <= {"train", "test"}
+    assert set(pairs.split_random) <= {"train", "test"}
+    assert_no_cluster_leakage(pairs)          # не должно бросить
+
+
+def test_leakage_detector_catches_leak():
+    pairs = pd.DataFrame({
+        "cluster_id": [0, 0], "split_cluster": ["train", "test"],
+    })
+    try:
+        assert_no_cluster_leakage(pairs)
+        raised = False
+    except AssertionError:
+        raised = True
+    assert raised

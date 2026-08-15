@@ -10,14 +10,26 @@ from src.data.cluster import greedy_cluster
 PAIR_KEY = ["aptamer_seq", "aptamer_type", "target_key"]
 
 
-def build_pairs(df: pd.DataFrame) -> pd.DataFrame:
-    df = df[~df["qualified_any"].astype(bool)].copy()
+def build_pairs(df: pd.DataFrame, keep_qualified: bool = False) -> pd.DataFrame:
+    if not keep_qualified:
+        df = df[~df["qualified_any"].astype(bool)].copy()
     pairs = (
         df.groupby(PAIR_KEY, dropna=False)["log_Kd"]
         .median()
         .reset_index()
     )
     return pairs
+
+
+def build_unified_pairs(protein_df: pd.DataFrame,
+                        smallmol_df: pd.DataFrame) -> pd.DataFrame:
+    """Объединить пары белков и малых молекул в одну таблицу с колонкой
+    target_type. Оговорённые значения оставлены для обоих типов (Часть 2)."""
+    prot = build_pairs(protein_df, keep_qualified=True)
+    prot["target_type"] = "protein"
+    mol = build_pairs(smallmol_df, keep_qualified=True)
+    mol["target_type"] = "molecule"
+    return pd.concat([prot, mol], ignore_index=True)
 
 
 def assign_clusters(pairs: pd.DataFrame, threshold: float) -> pd.DataFrame:

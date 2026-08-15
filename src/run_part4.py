@@ -89,7 +89,6 @@ def run_part4(cfg: Part4Config) -> dict:
     #     Для каждой белковой мишени: сила = −предсказанный log-Kd test-аптамеров;
     #     позитивы = test-аптамеры с измеренной парой к этой мишени.
     test_kept = kept[te].reset_index(drop=True)
-    Xa_te, _ = build_aptamer_matrix(test_kept, cfg.kmer_k, True)
     test_apt_seqs = test_kept["aptamer_seq"].tolist()
     test_apt_types = test_kept["aptamer_type"].tolist()
     uniq_apt = list(dict.fromkeys(zip(test_apt_seqs, test_apt_types)))

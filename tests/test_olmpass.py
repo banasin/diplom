@@ -29,3 +29,12 @@ def test_load_olmpass_iap(tmp_path):
     assert out["aptamer_type"].iloc[0] == "DNA"
     assert out["descriptor"].iloc[0] == "Ngram"
     assert out["threshold"].iloc[0] == "150nM"
+
+
+def test_load_olmpass_iap_skips_empty(tmp_path):
+    d = tmp_path / "500nM"
+    d.mkdir()
+    (d / "RNA_Ngram_9_targets.csv").write_bytes(b"\xef\xbb\xbf\r\n")   # только BOM+CRLF
+    _write_csv(d / "DNA_MNA_22_targets.csv")                            # валидный (2 строки)
+    out = load_olmpass_iap(str(tmp_path))
+    assert len(out) == 2                                                # только из валидного, пустой пропущен

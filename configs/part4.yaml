@@ -1,0 +1,14 @@
+seed: 42
+identity_threshold: 0.95
+test_size: 0.2
+kmer_k: 4
+esm_model: esm2_t33_650M_UR50D
+best_models_dir: best_models
+shap_top_k: 30
+binding_log_kd: -7.0
+xgb:
+  n_estimators: 600
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8

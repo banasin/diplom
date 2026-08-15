@@ -29,3 +29,6 @@ pytest
 # Часть 2: молекулярный энкодер ChemBERTa
 transformers
 huggingface_hub
+
+# Часть 4: интерпретация вклада признаков
+shap

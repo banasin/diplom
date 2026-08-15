@@ -79,6 +79,9 @@ def run(cfg: Config, data_path: str = "data/dataset_protein.parquet") -> pd.Data
     # признаки через общий сборщик (Task 7); пары без эмбеддинга мишени отброшены,
     # kept сохраняет колонки split_cluster/split_random для оценки ниже
     X_apt, X_prot, y, kept = build_feature_matrix(pairs, emb, cfg.kmer_k)
+    n_dropped = len(pairs) - len(kept)
+    print(f"Пар всего: {len(pairs)}; с эмбеддингом мишени: {len(kept)}; "
+          f"отброшено без UniProt-эмбеддинга: {n_dropped}")
 
     check_split_balance(kept["split_cluster"], cfg.test_size, "cluster")
 

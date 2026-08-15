@@ -61,12 +61,8 @@ def test_leakage_detector_catches_leak():
     pairs = pd.DataFrame({
         "cluster_id": [0, 0], "split_cluster": ["train", "test"],
     })
-    try:
+    with pytest.raises(ValueError):
         assert_no_cluster_leakage(pairs)
-        raised = False
-    except AssertionError:
-        raised = True
-    assert raised
 
 
 def test_check_split_balance_ok():

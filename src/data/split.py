@@ -77,4 +77,5 @@ def check_split_balance(split_labels, test_size: float, name: str = "cluster",
 def assert_no_cluster_leakage(pairs: pd.DataFrame) -> None:
     sides = pairs.groupby("cluster_id")["split_cluster"].nunique()
     leaked = sides[sides > 1].index.tolist()
-    assert not leaked, f"Утечка: кластеры в обоих сплитах: {leaked}"
+    if leaked:
+        raise ValueError(f"Утечка: кластеры в обоих сплитах: {leaked}")

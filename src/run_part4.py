@@ -80,9 +80,10 @@ def run_part4(cfg: Part4Config) -> dict:
 
     # --- SHAP по расширенной модели ---
     model_s, X_s, names_s = models[True]
-    shap_df = shap_feature_importance(model_s, X_s[tr], names_s, cfg.shap_top_k)
-    group_df = (shap_df.groupby("group")["mean_abs_shap"].sum()
+    shap_all = shap_feature_importance(model_s, X_s[tr], names_s, top_k=len(names_s))
+    group_df = (shap_all.groupby("group")["mean_abs_shap"].sum()
                 .reset_index().sort_values("mean_abs_shap", ascending=False))
+    shap_df = shap_all.head(cfg.shap_top_k).reset_index(drop=True)
 
     # --- H8: per-target AUC (наш, на test) vs OLMPASS IAP ---
     #     Для каждой белковой мишени: сила = −предсказанный log-Kd test-аптамеров;

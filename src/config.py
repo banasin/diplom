@@ -58,3 +58,31 @@ def load_part2_config(path: str = "configs/part2.yaml") -> Part2Config:
         nn=dict(data["nn"]),
         xgb=dict(data["xgb"]),
     )
+
+
+@dataclass
+class Part3Config:
+    seed: int
+    identity_threshold: float
+    test_size: float
+    kmer_k: int
+    esm_model: str
+    binding_log_kd: float
+    precision_ks: list
+    nn: dict
+    xgb: dict
+
+
+def load_part3_config(path: str = "configs/part3.yaml") -> Part3Config:
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    return Part3Config(
+        seed=int(data["seed"]),
+        identity_threshold=float(data["identity_threshold"]),
+        test_size=float(data["test_size"]),
+        kmer_k=int(data["kmer_k"]),
+        esm_model=str(data["esm_model"]),
+        binding_log_kd=float(data["binding_log_kd"]),
+        precision_ks=list(data["precision_ks"]),
+        nn=dict(data["nn"]),
+        xgb=dict(data["xgb"]),
+    )

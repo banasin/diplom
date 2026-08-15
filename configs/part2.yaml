@@ -1,0 +1,27 @@
+seed: 42
+identity_threshold: 0.95
+test_size: 0.2
+kmer_k: 4
+esm_model: esm2_t33_650M_UR50D
+chem_model: DeepChem/ChemBERTa-77M-MLM
+m_tokens: 16               # число «токенов» мишени для cross-attention
+shared_dim: 128            # общая размерность D
+fusions: [concat, bilinear, cross_attention]
+nn:
+  aptamer_hidden: 256
+  head_hidden: 128
+  bilinear_out: 128
+  attn_heads: 4
+  aptamer_tokens: 8        # число токенов аптамера для cross-attention
+  dropout: 0.2
+  lr: 0.001
+  batch_size: 64
+  max_epochs: 200
+  patience: 20
+  val_fraction: 0.15
+xgb:
+  n_estimators: 600
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8

@@ -4,7 +4,10 @@
 (Needleman–Wunsch) относительно длины более короткой последовательности.
 Кластеризация — жадная: сортировка по длине, приклеивание к первому подходящему
 представителю. Нормализация U→T перед сравнением, чтобы ДНК/РНК-гомологи не
-разъезжались между train/test."""
+разъезжались между train/test. Префильтр по составу нуклеотидов обеспечивает
+корректность: верхняя оценка совпадений не может занизить реальное число."""
+from collections import Counter
+
 from src.features.aptamer import normalize_seq
 
 
@@ -23,8 +26,12 @@ def _nw_matches(a: str, b: str) -> int:
     return prev[m]
 
 
-def _kmers(seq: str, k: int = 5) -> set[str]:
-    return {seq[i:i + k] for i in range(len(seq) - k + 1)}
+def _max_possible_matches(a: str, b: str) -> int:
+    """Верхняя оценка числа совпадений в любом выравнивании: по каждому
+    символу берём минимум из его вхождений в a и b. Никогда не занижает
+    реальное число совпадений, поэтому пригодна как безопасный префильтр."""
+    ca, cb = Counter(a), Counter(b)
+    return sum(min(ca[x], cb[x]) for x in ca.keys() | cb.keys())
 
 
 def identity(a: str, b: str) -> float:
@@ -37,20 +44,23 @@ def identity(a: str, b: str) -> float:
 def greedy_cluster(seqs: list[str], threshold: float) -> list[int]:
     norm = [normalize_seq(s) for s in seqs]
     order = sorted(range(len(norm)), key=lambda i: len(norm[i]), reverse=True)
-    reps: list[tuple[int, set[str]]] = []      # (индекс представителя, его k-меры)
+    reps: list[int] = []                       # индексы представителей
     labels = [-1] * len(norm)
     for i in order:
         s = norm[i]
-        ks = _kmers(s)
         assigned = None
-        for rep_i, rep_ks in reps:
-            if ks and rep_ks and ks.isdisjoint(rep_ks):
-                continue                        # префильтр: нет общих k-меров
-            if identity(s, norm[rep_i]) >= threshold:
+        for rep_i in reps:
+            rep_seq = norm[rep_i]
+            min_len = min(len(s), len(rep_seq))
+            # безопасный префильтр: если даже верхняя оценка совпадений ниже порога —
+            # идентичность заведомо < threshold, выравнивание можно пропустить
+            if _max_possible_matches(s, rep_seq) < threshold * min_len:
+                continue
+            if identity(s, rep_seq) >= threshold:
                 assigned = labels[rep_i]
                 break
         if assigned is None:
             assigned = len(reps)
-            reps.append((i, ks))
+            reps.append(i)
         labels[i] = assigned
     return labels

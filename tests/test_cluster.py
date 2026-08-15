@@ -25,3 +25,11 @@ def test_greedy_cluster_all_distinct():
     seqs = ["AAAAAAAAAA", "CCCCCCCCCC", "GGGGGGGGGG"]
     labels = greedy_cluster(seqs, threshold=0.8)
     assert len(set(labels)) == 3
+
+
+def test_greedy_cluster_short_similar_disjoint_kmers():
+    # длина 10, идентичность 8/10=0.8, но общих 5-меров нет —
+    # прежний k-мерный префильтр ошибочно разъединял такие пары
+    seqs = ["AAAAAAAAAA", "AAAACCAAAA"]
+    labels = greedy_cluster(seqs, threshold=0.8)
+    assert labels[0] == labels[1]

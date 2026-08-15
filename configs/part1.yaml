@@ -1,0 +1,22 @@
+seed: 42
+identity_threshold: 0.8      # порог идентичности для кластеризации (аналог -c CD-HIT)
+test_size: 0.2               # доля test
+kmer_k: 4                    # длина k-мера аптамера
+esm_model: esm2_t33_650M_UR50D
+xgb:
+  n_estimators: 600
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+nn:
+  aptamer_hidden: 256
+  protein_hidden: 256
+  embed_dim: 128
+  head_hidden: 128
+  dropout: 0.2
+  lr: 0.001
+  batch_size: 64
+  max_epochs: 200
+  patience: 20
+  val_fraction: 0.15

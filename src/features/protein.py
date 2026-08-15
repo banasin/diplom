@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import esm
+from src.features.pooling import chunk_pool
 
 _MODEL_LAYERS = {
     "esm2_t6_8M_UR50D": 6,
@@ -54,5 +55,37 @@ def embed_sequences(seqs: dict[str, str], model_name: str, cache_path: str,
         with open(tmp_file, "wb") as f:
             np.savez(f, **cached)
         os.replace(tmp_file, cache_file)
+
+    return {k: cached[k] for k in seqs if k in cached}
+
+
+def embed_protein_tokens(seqs: dict, model_name: str, cache_path: str,
+                         m_tokens: int, batch_size: int = 8) -> dict:
+    cache_file = Path(cache_path)
+    cached: dict = {}
+    if cache_file.exists():
+        with np.load(cache_file, allow_pickle=False) as npz:
+            cached = {k: np.array(npz[k]) for k in npz.files}
+
+    todo = {k: v[:MAX_RESIDUES] for k, v in seqs.items() if k not in cached}
+    if todo:
+        model, _, batch_converter, device = _load_model(model_name)
+        layer = _MODEL_LAYERS[model_name]
+        items = list(todo.items())
+        for i in range(0, len(items), batch_size):
+            chunk = items[i:i + batch_size]
+            _, _, tokens = batch_converter([(k, v) for k, v in chunk])
+            tokens = tokens.to(device)
+            with torch.no_grad():
+                out = model(tokens, repr_layers=[layer], return_contacts=False)
+            reps = out["representations"][layer]
+            for j, (k, v) in enumerate(chunk):
+                res = reps[j, 1:len(v) + 1].cpu().numpy().astype(np.float32)
+                cached[k] = chunk_pool(res, m_tokens)
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache_file.with_name(cache_file.name + ".tmp")
+        with open(tmp, "wb") as f:
+            np.savez(f, **cached)
+        os.replace(tmp, cache_file)
 
     return {k: cached[k] for k in seqs if k in cached}

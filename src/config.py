@@ -114,3 +114,33 @@ def load_part4_config(path: str = "configs/part4.yaml") -> Part4Config:
         binding_log_kd=float(data["binding_log_kd"]),
         xgb=dict(data["xgb"]),
     )
+
+
+@dataclass
+class Part5Config:
+    seed: int
+    identity_threshold: float
+    test_size: float
+    kmer_k: int
+    esm_model: str
+    nt_model: str
+    n_negatives: int
+    ranking_loss: str
+    best_models_dir: str
+    nn: dict
+
+
+def load_part5_config(path: str = "configs/part5.yaml") -> Part5Config:
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    return Part5Config(
+        seed=int(data["seed"]),
+        identity_threshold=float(data["identity_threshold"]),
+        test_size=float(data["test_size"]),
+        kmer_k=int(data["kmer_k"]),
+        esm_model=str(data["esm_model"]),
+        nt_model=str(data["nt_model"]),
+        n_negatives=int(data["n_negatives"]),
+        ranking_loss=str(data["ranking_loss"]),
+        best_models_dir=str(data["best_models_dir"]),
+        nn=dict(data["nn"]),
+    )

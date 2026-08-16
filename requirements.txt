@@ -32,3 +32,6 @@ huggingface_hub
 
 # Часть 4: интерпретация вклада признаков
 shap
+
+# Часть 5: нуклеотидная языковая модель (Nucleotide Transformer)
+einops

@@ -3,7 +3,7 @@ identity_threshold: 0.95
 test_size: 0.2
 kmer_k: 4
 esm_model: esm2_t33_650M_UR50D
-nt_model: InstaDeepAI/nucleotide-transformer-v2-100m-multi-species
+nt_model: zhihan1996/DNA_bert_6   # предобученный нуклеотидный энкодер аптамера (DNABERT; NT несовместим с transformers 5.15)
 n_negatives: 5
 ranking_loss: bpr
 best_models_dir: best_models

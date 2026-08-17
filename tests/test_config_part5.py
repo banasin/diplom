@@ -6,7 +6,7 @@ def test_load_part5_config_defaults():
     assert cfg.seed == 42
     assert cfg.n_negatives == 5
     assert cfg.ranking_loss == "bpr"
-    assert cfg.nt_model.startswith("InstaDeepAI/")
+    assert cfg.nt_model == "zhihan1996/DNA_bert_6"
     for key in ["aptamer_hidden", "protein_hidden", "embed_dim", "head_hidden",
                 "dropout", "lr", "batch_size", "max_epochs", "patience",
                 "val_fraction", "margin"]:
